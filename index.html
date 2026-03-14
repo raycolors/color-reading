@@ -1,0 +1,1206 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カラーリーディング｜心の色を読み解く</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #fdf8f2;
+    --bg2:       #fef4eb;
+    --surface:   #fffcf8;
+    --rose:      #c0745a;
+    --rose-mid:  #d9967e;
+    --rose-pale: #f5e4dc;
+    --text:      #3d2b1f;
+    --text-mid:  #7a5c4a;
+    --text-muted:#b09080;
+    --border:    rgba(192,116,90,0.18);
+    --now-col:   #6a9e82;
+    --stress-col:#8a78b8;
+    --wish-col:  #c0745a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif JP', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* ────── INTRO ────── */
+  #intro {
+    background: radial-gradient(ellipse at 50% 20%, #fdeee4 0%, #fdf8f2 65%);
+    text-align: center;
+    padding: 3rem 2rem;
+    gap: 1.8rem;
+  }
+
+  .intro-petal {
+    font-size: 3rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.2s forwards;
+  }
+
+  .intro-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--rose);
+    letter-spacing: 0.08em;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.5s forwards;
+  }
+
+  .intro-sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    letter-spacing: 0.25em;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.8s forwards;
+  }
+
+  .intro-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--rose-mid);
+    opacity: 0;
+    animation: fadeUp 1s ease 1s forwards;
+  }
+
+  .intro-desc {
+    max-width: 380px;
+    font-size: 0.88rem;
+    line-height: 2.2;
+    color: var(--text-mid);
+    opacity: 0;
+    animation: fadeUp 1s ease 1.1s forwards;
+  }
+
+  .btn-start {
+    padding: 0.9rem 2.8rem;
+    background: var(--rose);
+    border: none;
+    color: #fff;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.88rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 16px rgba(192,116,90,0.3);
+    opacity: 0;
+    animation: fadeUp 1s ease 1.4s forwards;
+  }
+  .btn-start:hover { background: var(--rose-mid); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(192,116,90,0.35); }
+
+  /* ────── STEP 1 ────── */
+  #step1 {
+    padding: 2.5rem 1rem 3rem;
+    gap: 1.8rem;
+    background: var(--bg);
+  }
+
+  .step-header { text-align: center; }
+
+  .step-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.35em;
+    color: var(--rose);
+    text-transform: uppercase;
+  }
+
+  .step-title {
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    font-weight: 400;
+    margin-top: 0.6rem;
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  .step-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    line-height: 2;
+  }
+
+  .color-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    max-width: 580px;
+    padding: 1.8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(192,116,90,0.07);
+  }
+
+  .color-swatch {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    cursor: grab;
+    border: 3px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .color-swatch:hover { transform: scale(1.12); box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .color-swatch.dragging { opacity: 0.45; cursor: grabbing; }
+  .color-swatch.drag-over { border-color: var(--rose); transform: scale(1.1); }
+  .color-swatch.selected-tap { border-color: var(--rose); box-shadow: 0 0 0 3px var(--rose-pale); }
+
+  .color-swatch .num {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* sorted preview */
+  .sorted-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 580px;
+  }
+  .sorted-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .sorted-mini {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+  }
+  .slot-num { font-size: 0.58rem; color: var(--text-muted); }
+  .sorted-slot.hl-wish .sorted-mini   { border-color: var(--wish-col);   box-shadow: 0 0 8px rgba(192,116,90,0.4); }
+  .sorted-slot.hl-now .sorted-mini    { border-color: var(--now-col);    box-shadow: 0 0 8px rgba(106,158,130,0.4); }
+  .sorted-slot.hl-stress .sorted-mini { border-color: var(--stress-col); box-shadow: 0 0 8px rgba(138,120,184,0.4); }
+
+  /* legend */
+  .legend {
+    display: flex;
+    gap: 1.2rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .btn-result {
+    padding: 0.9rem 2.5rem;
+    background: #a8a8a8;
+    border: none;
+    color: #fff;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 16px rgba(192,116,90,0.3);
+  }
+  .btn-result:hover { background: #888888; transform: translateY(-2px); }
+  .btn-result:disabled { background: #d8c8c0; box-shadow: none; cursor: not-allowed; transform: none; }
+
+  /* ────── RESULT ────── */
+  #result {
+    padding: 3rem 1.5rem 4rem;
+    gap: 2rem;
+    background: radial-gradient(ellipse at 50% 0%, #fdeee4 0%, #fdf8f2 55%);
+  }
+
+  .result-header { text-align: center; }
+
+  .result-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--rose);
+    text-transform: uppercase;
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .result-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text);
+    letter-spacing: 0.08em;
+    margin-top: 0.4rem;
+  }
+
+  .result-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    max-width: 540px;
+    width: 100%;
+  }
+
+  .result-card {
+    border-radius: 18px;
+    padding: 1.6rem 1.8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 16px rgba(192,116,90,0.07);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .result-card.visible { opacity: 1; transform: translateY(0); }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 18px 18px 0 0;
+  }
+  .card-now::before    { background: var(--now-col); }
+  .card-stress::before { background: var(--stress-col); }
+  .card-wish::before   { background: var(--wish-col); }
+
+  .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    margin-bottom: 0.9rem;
+    font-family: 'Cormorant Garamond', serif;
+  }
+  .card-now .card-label    { color: var(--now-col); }
+  .card-stress .card-label { color: var(--stress-col); }
+  .card-wish .card-label   { color: var(--wish-col); }
+
+  .card-message {
+    font-size: 0.9rem;
+    line-height: 2.1;
+    color: var(--text-mid);
+    font-weight: 300;
+  }
+
+  .loading-text {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    animation: pulse 1.5s ease infinite;
+    padding: 2rem;
+  }
+
+  /* ── POWER SELECTION ── */
+  .power-section {
+    max-width: 540px;
+    width: 100%;
+    text-align: center;
+  }
+  .power-question {
+    font-size: 0.85rem;
+    color: var(--text-mid);
+    letter-spacing: 0.12em;
+    margin-bottom: 1.2rem;
+    line-height: 2;
+  }
+  .power-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .power-btn {
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    color: var(--text-mid);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.88rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .power-btn:hover {
+    background: var(--rose-pale);
+    border-color: var(--rose-mid);
+    color: var(--rose);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(192,116,90,0.15);
+  }
+
+  /* ── AFFIRMATION ── */
+  .affirmation-card {
+    max-width: 540px;
+    width: 100%;
+    text-align: center;
+    padding: 3rem 2rem;
+    background: linear-gradient(135deg, #fdeee4 0%, #fdf4f0 100%);
+    border-radius: 24px;
+    border: 1px solid var(--rose-pale);
+    opacity: 1;
+    transform: none;
+  }
+  .affirmation-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--rose);
+    text-transform: uppercase;
+    font-family: 'Cormorant Garamond', serif;
+    margin-bottom: 1.2rem;
+  }
+  .affirmation-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.8;
+    letter-spacing: 0.05em;
+  }
+  .affirmation-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 1.2rem;
+    line-height: 2;
+  }
+
+  .cheer-card {
+    text-align: center;
+    padding: 1.8rem;
+    background: linear-gradient(135deg, #fdeee4 0%, #fdf4f0 100%);
+    border: 1px solid var(--rose-pale);
+    border-radius: 18px;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .cheer-card.visible { opacity: 1; transform: translateY(0); }
+  .cheer-message {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-style: italic;
+    color: var(--rose);
+    line-height: 1.8;
+    margin-bottom: 0.6rem;
+  }
+  .cheer-from {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+
+
+  /* ── SHARE CARD ── */
+  .share-btn {
+    padding: 0.75rem 2rem;
+    background: #b0b0b0;
+    border: none;
+    color: #fff;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    margin-top: 1rem;
+  }
+  .share-btn:hover { background: #909090; transform: translateY(-2px); }
+
+  #shareCanvas { display: none; }
+  .btn-retry {
+    padding: 0.75rem 2rem;
+    background: transparent;
+    border: 1px solid var(--rose-mid);
+    color: var(--rose);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.3s;
+  }
+  .btn-retry:hover { background: var(--rose-pale); }
+
+  .divider {
+    width: 40px; height: 1px;
+    background: var(--rose-mid);
+    opacity: 0.4;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 0.35; } 50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="screen active" id="intro">
+  <div class="intro-petal">🌸</div>
+  <h1 class="intro-title">Color Reading</h1>
+  <p class="intro-sub">色から心を読み解く</p>
+  <div class="intro-divider"></div>
+  <p class="intro-desc">
+    12色を直感で並べてください。<br>
+    考えすぎずに、心が動くままに。<br>
+    あなたが選ぶ順番の中に、<br>
+    今の心模様が映し出されます。
+  </p>
+  <button class="btn-start" onclick="showStep1()">はじめる</button>
+</div>
+
+<!-- STEP 1 -->
+<div class="screen" id="step1">
+  <div class="step-header">
+    <div class="step-label">Step 1</div>
+    <div class="step-title">好きな順番に並べてください</div>
+    <div class="step-desc">直感で。左から「惹かれる色」の順に。</div>
+  </div>
+
+  <div class="color-palette" id="palette"></div>
+
+  <div class="sorted-row" id="sortedRow"></div>
+
+  <p style="font-size:0.85rem; color:var(--text-mid); letter-spacing:0.08em; text-align:center; line-height:2;">
+    さあ、あなたの今の心模様を見てみましょう
+  </p>
+
+  <button class="btn-result" id="btnResult" onclick="showResult()">心模様を読み解く</button>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="result">
+  <div class="result-header">
+    <div class="result-eyebrow">Color Reading</div>
+    <div class="result-title">あなたの心模様</div>
+  </div>
+
+  <div class="result-grid" id="resultGrid"></div>
+
+</div>
+
+<script>
+const COLORS = [
+  { name:'レッド',          hex:'#E82020', direction:'外向・自律' },
+  { name:'レッドオレンジ',  hex:'#E85A10', direction:'外向・自律' },
+  { name:'オレンジ',        hex:'#F09000', direction:'外向・他律' },
+  { name:'イエロー',        hex:'#F5D800', direction:'外向・他律' },
+  { name:'イエローグリーン',hex:'#96D400', direction:'中立（どちらへも向かい中立へ戻る）' },
+  { name:'グリーン',        hex:'#18A838', direction:'中立（どちらへも向かい中立へ戻る）' },
+  { name:'ブルーグリーン',  hex:'#009E7A', direction:'内向・自律' },
+  { name:'ターコイズ',      hex:'#00B4C8', direction:'内向・自律' },
+  { name:'ブルー',          hex:'#1878C8', direction:'内向・他律' },
+  { name:'インディゴ',      hex:'#2830A0', direction:'内向・他律' },
+  { name:'パープル',        hex:'#7030A0', direction:'大中立・他律（宇宙の摂理で動く）' },
+  { name:'マジェンタ',      hex:'#C82080', direction:'大中立・自律（地球の核を守る）' },
+];
+
+const KEYWORDS = {
+  'レッド': {
+    positive:['活力','生命力','エネルギー','情熱','積極性','達成力','成功欲求','実行力','意志力','リーダー','決意','勤勉','大胆','自己主張'],
+    negative:['攻撃','怒り','破壊','衝動','侵略','憎悪','粗暴','暴力','支配欲求','残酷','フラストレーション','エゴが強い'],
+    minus:['弱さ','臆病','受身','不安定','不誠実','生活疲れ','閉鎖的','内向的','恐怖感','無気力'],
+    theme:'活力・興奮・情熱・自己主張'
+  },
+  'レッドオレンジ': {
+    positive:['挑戦','達成感','社会性','競争力','速攻','勇気','チャレンジャー','外交性','強さ','躍動力','フットワーク','大胆','スピード感','フロンティア精神'],
+    negative:['非情','虚栄','目立ちたがり','敗北感','競争意識','図々しさ','独善的','強引','高慢','エゴイスティック','自慢'],
+    minus:['弱さ','臆病','受身','不公平','不安定','閉鎖的','依存心','劣等感','コンプレックス','自己否定','無気力'],
+    theme:'競争力・速攻・勇気・挑戦'
+  },
+  'オレンジ': {
+    positive:['自由力','変化','陽気','好奇心','快活','おしゃべり','人好き','社交性','幸福の共有','外交的','家庭的','仲間意識','温かさ','楽観的'],
+    negative:['競争意識','寂しさ','孤独感','図々しさ','自慢屋','適当さ','飽き性','裏工作','アルコール薬物への依存性'],
+    minus:['破壊的','依存心','劣等感','コンプレックス','社会性のトラブル','自己否定','無責任','非社会性'],
+    theme:'自由力・変化・陽気・好奇心'
+  },
+  'イエロー': {
+    positive:['向上力','楽天性','軽快','聡明','楽観的','発展的','明瞭な思考力','希望','柔軟性','幸福感','ユーモア','知識欲','知的好奇心','記憶力','情報収集'],
+    negative:['お世辞','計算高い','ずるい','気まぐれ','諸張する','利己的','批判的','皮肉','軽率','甘えや依存','幼児的','不安','優柔不断'],
+    minus:['不安','不満','優柔不断','失望','挫折感','意気消沈','混乱','臆病','懐疑的','虚心','悲観的'],
+    theme:'向上力・楽天性・軽快・聡明'
+  },
+  'イエローグリーン': {
+    positive:['柔軟力','優しさ','穏やかさ','安心','愛','幸福感','感情の安定','思いやり','新鮮','再生','自然','休息','女性性','母性','温厚','受容性','共感性','謙虚','協調性'],
+    negative:['臆病','引っ込み思案','依存','煩悩','自己犠牲','現実逃避','感情的','ワガママ','庇護されたい','内的弱さ','見返りの期待'],
+    minus:['愛情拒否','無謀','緊張','イライラ','八つ当たり','非情','嫌悪感','女性に対する偏見'],
+    theme:'柔軟力・優しさ・穏やかさ・安心'
+  },
+  'グリーン': {
+    positive:['調和力','自然体','安定','平和','調和','家族主義','子供と動物への愛','思いやり','情け深い','優しさ','幸福','休息','平静','協力的','救助','バランス','平等','良識'],
+    negative:['ひがみ','執着','貪欲','日和見主義','利己的','物質主義','貧欲','妬み','嫉妬','同情を求める','卑しい','意地悪','超神経質'],
+    minus:['心配性','狭い了見','猜疑心','無関心','感傷的','乱雑性','ゴシップ屋','陰口','家庭のトラブル','不平','喪失感','慢性疲労','悲しみ'],
+    theme:'調和力・自然体・安定・平和'
+  },
+  'ブルーグリーン': {
+    positive:['バランス','自己認識','平等','忍耐力','自分軸','不変的','抵抗力','自己統率','アイデンティティ','洞察力','自立','マイペース','精神力','適度な距離感','役割分担'],
+    negative:['曖昧','頑固','鈍重','意固地','個人主義','自己過信','うぬぼれ','固執','批判的','虚栄心','自慢','冷たい','見下す'],
+    minus:['流されやすさ','ペースの乱れ','自己の喪失','優柔不断','役割不能','自己無認識','居場所がない'],
+    theme:'バランス・自己認識・平等・忍耐力'
+  },
+  'ターコイズ': {
+    positive:['自分力','領域','マイウェイ','自立','自分軸','不変的','抵抗力','忍耐力','自己統制','創造性','自己認識','オリジナリティ','アイデンティティ','感覚的','洞察力','自分に忠実'],
+    negative:['個人主義','孤立','ナルシシスト','固執','自己過信','うぬぼれ','頑固','批判的','虚栄','自慢','見下す','無口','見かけ倒し'],
+    minus:['流されやすさ','依存','自己の喪失','優柔不断','成り行き任せ','自己無認識'],
+    theme:'自分力・領域・マイウェイ・自立'
+  },
+  'ブルー': {
+    positive:['接触力','生真面目','誠実','責任感','義務感','忠誠心','言語','発言力','コミュニケーション力','伝達力','観察力','保守的','自尊心','自制心','忍耐力','計画性','理性的','指導力','時間管理力','左脳','冷静','謙虚','まじめ'],
+    negative:['批評家','紳士気取り','計算高い','皮肉や','傲慢','見下す','権力意識','恩着せ顔','自己満足','権威主義','保守的','自己抑制','反省','消沈','意地悪'],
+    minus:['過剰野心','不信感','自信喪失','懐疑的','非組織的','統制不足','話し好き','独断','頑固'],
+    theme:'接触力・生真面目・誠実・責任感'
+  },
+  'インディゴ': {
+    positive:['理解力','冷静','内観','完璧','直感的','改革心','理想家','創造家','分析力','活動家','習慣打破','情報収集家','未来志向','抽象的','計画性','理論的','正義感','情報処理力','精神力','組織的','司令塔','超感覚','感覚の深さ'],
+    negative:['完璧主義','緊張','陰湿','支配','理屈','権威主義','悪癖','神経質','独善的','独裁的','厳格','閉鎖的','孤独','堅苦しさ','中毒','強迫的','内向的'],
+    minus:['内部対立','無秩序','葛藤','焦燥感','緊張','自滅的','受身','意気消沈','内向性','内部混乱','不理解','現実逃避','非現実'],
+    theme:'理解力・冷静・内観・完璧'
+  },
+  'パープル': {
+    positive:['感覚力','美学','慈悲','崇高','偉大な精神力','人生への信頼感','霊性','人道主義','美意識','神秘主義','公平性','利他主義','直感的指導者','カリスマ性','創造性','芸術性','無私無欲','繊細','優美さ','洗練','癒やし','浄化'],
+    negative:['優越感','自己陶酔','情緒不安定','高慢','不信感','非現実的','独断的','逃避願望','うぬぼれ','無関心','不誠意','熱狂的','自己宣伝家','誇大妄想者','評論的'],
+    minus:['人生への不信感','否定的な見方','無責任','卑しさ','利己主義','無存在感','過去のトラウマ'],
+    theme:'感覚力・美学・慈悲・崇高'
+  },
+  'マジェンタ': {
+    positive:['包容力','寛大','安定','博愛','許容力','母性的','献身的','生命本能','人間愛','人生の土台','感覚統合','大らかさ','奉仕','優しさ','親切','思いやり','強さ','安らぎ','大きな愛情','援助','無償の愛','ボランティア精神'],
+    negative:['不満足','ひとりよがり','おせっかい','感情的','同情','犠牲的','仕切りや','独占的'],
+    minus:['無感覚','過去への固執','人生を楽しめない','自己犠牲','生命危機','人への恐怖感'],
+    theme:'包容力・寛大・安定・博愛'
+  },
+};
+
+
+
+
+// 各色の背景グラデーション
+const COLOR_GRADIENTS = {
+  'レッド':          { bg:'linear-gradient(135deg, #ff6b6b 0%, #e82020 40%, #8b0000 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'レッドオレンジ':  { bg:'linear-gradient(135deg, #ffaa80 0%, #e85a10 40%, #9a2d00 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'オレンジ':        { bg:'linear-gradient(135deg, #ffd080 0%, #f09000 40%, #a05800 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'イエロー':        { bg:'linear-gradient(135deg, #fffaaa 0%, #f5d800 40%, #b89800 100%)', text:'#5a4000', accent:'rgba(90,64,0,0.75)' },
+  'イエローグリーン':{ bg:'linear-gradient(135deg, #e8ffb0 0%, #96d400 40%, #5a8000 100%)', text:'#2a4000', accent:'rgba(42,64,0,0.75)' },
+  'グリーン':        { bg:'linear-gradient(135deg, #80e8a0 0%, #18a838 40%, #006020 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'ブルーグリーン':  { bg:'linear-gradient(135deg, #80e8d0 0%, #009e7a 40%, #005040 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'ターコイズ':      { bg:'linear-gradient(135deg, #a0f0ff 0%, #00b4c8 40%, #006880 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'ブルー':          { bg:'linear-gradient(135deg, #80b8ff 0%, #1878c8 40%, #003880 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'インディゴ':      { bg:'linear-gradient(135deg, #8888e8 0%, #2830a0 40%, #080850 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'パープル':        { bg:'linear-gradient(135deg, #d080e8 0%, #7030a0 40%, #380060 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+  'マジェンタ':      { bg:'linear-gradient(135deg, #ff80c8 0%, #c82080 40%, #700040 100%)', text:'#fff', accent:'rgba(255,255,255,0.85)' },
+};
+
+// 各色の力とアファメーション
+const COLOR_POWER = {
+  'レッド':          { power:'情熱と行動の力',       affirmation:'私は今、力強く前へ進んでいる' },
+  'レッドオレンジ':  { power:'勇気と挑戦の力',       affirmation:'私は勇気を持って挑戦している' },
+  'オレンジ':        { power:'自由と喜びの力',       affirmation:'私は自由に、喜びとともに羽ばたいている' },
+  'イエロー':        { power:'希望と向上の力',       affirmation:'私の未来は希望に満ちあふれている' },
+  'イエローグリーン':{ power:'優しさと安らぎの力',   affirmation:'私は優しさに包まれ、安らいでいる' },
+  'グリーン':        { power:'調和と平和の力',       affirmation:'私は自然体で、穏やかに調和している' },
+  'ブルーグリーン':  { power:'自己を知る力',         affirmation:'私は私自身を深く知り、信頼している' },
+  'ターコイズ':      { power:'自分らしくある力',     affirmation:'私は私らしく、自分の道を歩んでいる' },
+  'ブルー':          { power:'誠実に向き合う力',     affirmation:'私は誠実に、大切な人と向き合っている' },
+  'インディゴ':      { power:'深く理解する力',       affirmation:'私は深く理解し、冷静に見渡している' },
+  'パープル':        { power:'感性と慈悲の力',       affirmation:'私の感性は、宇宙とつながっている' },
+  'マジェンタ':      { power:'大きく包む愛の力',     affirmation:'私は大いなる愛に包まれ、安心している' },
+};
+
+// 2色リーディング（3・4番目：現状）
+const TWO_COLOR = {
+  // R combinations
+  'レッド+レッドオレンジ': { key:'外向性・自信', reading:'忙しいけれど充実していて、がむしゃらに頑張っている' },
+  'レッド+オレンジ':       { key:'満足・可能性', reading:'これから何でも出来そうで、未来への可能性を感じている' },
+  'レッド+イエロー':       { key:'愛情生活',     reading:'喜びを感じながら大切な人とエンジョイしている' },
+  'レッド+グリーン':       { key:'生命本能',     reading:'五感で感じる事を大切にしながら、本能の喜びを実感している' },
+  'レッド+ターコイズ':     { key:'わが道を行く', reading:'周囲に惑わされず、自分のやり方で推し進めている' },
+  'レッド+ブルー':         { key:'従うべきか否か', reading:'従順さとは裏腹に、主張したい気持ちもあり葛藤がある' },
+  'レッド+インディゴ':     { key:'緊迫感',       reading:'非常に緊張した状況があり、人にも自分にも厳しさが生じている' },
+  'レッド+パープル':       { key:'生きる怖さ',   reading:'生命を脅かすような怖さを感じている' },
+  'レッド+マジェンタ':     { key:'力強さ',       reading:'自分の力の及ぶ限り今出来る最大の努力をしている' },
+  // RO combinations (derived from R+O energy)
+  'レッドオレンジ+オレンジ': { key:'変化の訪れ', reading:'あらたな変化の波が訪れていて、外へ、未来へと目が向いている' },
+  'レッドオレンジ+イエロー': { key:'挑戦と可能性', reading:'新しい可能性に向けて果敢に挑戦し、エネルギーが満ちている' },
+  'レッドオレンジ+グリーン': { key:'達成と安定', reading:'達成感を感じながらも、安定した土台を求めている' },
+  'レッドオレンジ+ターコイズ':{ key:'自分流の挑戦', reading:'自分のペースで挑戦を続け、独自の道を切り開いている' },
+  'レッドオレンジ+ブルー':   { key:'社会的使命', reading:'社会的な役割と自分の挑戦心の間で、誠実に取り組んでいる' },
+  'レッドオレンジ+インディゴ':{ key:'戦略的行動', reading:'緻密な計画と果敢な行動力を組み合わせて動いている' },
+  'レッドオレンジ+パープル': { key:'創造的挑戦', reading:'直感と行動力が合わさり、創造的な挑戦をしている' },
+  'レッドオレンジ+マジェンタ':{ key:'愛の行動力', reading:'愛する人のために全力で行動し、達成しようとしている' },
+  // O combinations
+  'オレンジ+オレンジ':     { key:'お気軽',       reading:'日々気ままに楽しむことを大切にしている' },
+  'オレンジ+イエロー':     { key:'変化の訪れ',   reading:'あらたな変化の波が訪れていて、外へ、未来へと目が向いている' },
+  'オレンジ+グリーン':     { key:'仲間意識',     reading:'安心できる仲間と共にあり、窮屈にならないよう心がけている' },
+  'オレンジ+ターコイズ':   { key:'創造性',       reading:'誰にも邪魔されず、義務感にしばられず、創造性が豊かである' },
+  'オレンジ+ブルー':       { key:'義務と自由の葛藤', reading:'周りに合わせるか、自由に考えるかの葛藤がある' },
+  'オレンジ+インディゴ':   { key:'優先順位',     reading:'思いつくままするかキチっとするかの葛藤がある' },
+  'オレンジ+パープル':     { key:'気がかり',     reading:'気がかりな事があり自由に楽しめない状況がある' },
+  'オレンジ+マジェンタ':   { key:'豊かさ',       reading:'大切な人を支え思いやる豊かさと自在性がある' },
+  // Y combinations
+  'イエロー+イエロー':     { key:'軽やかさ',     reading:'責任や義務から逃れて身軽で軽やかな状態である' },
+  'イエロー+グリーン':     { key:'健やか',       reading:'決して無理をせず、心が健やかで明るい状態である' },
+  'イエロー+ターコイズ':   { key:'抵抗',         reading:'状況に応じて変わる事への抵抗と葛藤がある' },
+  'イエロー+ブルー':       { key:'味方を得る',   reading:'思いを伝えて理解者を得るか、キッパリ手放すかの不安がある' },
+  'イエロー+インディゴ':   { key:'知的葛藤',     reading:'場当たり的に飛びつくか、よく考えて決めるかの葛藤がある' },
+  'イエロー+パープル':     { key:'乗り越える壁', reading:'輝く明日へ向かうために、今ひとつ不安な材料がある' },
+  'イエロー+マジェンタ':   { key:'充実',         reading:'大らかな愛を感じ、未来の安泰を予感し充実している' },
+  // YG combinations
+  'イエローグリーン+グリーン': { key:'ゆとり',   reading:'ゆとりを大切に、平和で穏やかに過ごしている' },
+  'イエローグリーン+ターコイズ':{ key:'守備',    reading:'自分の家庭や居場所を守り育むことを重視している' },
+  'イエローグリーン+ブルー':  { key:'協調',      reading:'むやみに摩擦を起こさないように周りと協調している' },
+  'イエローグリーン+インディゴ':{ key:'自制心',  reading:'気を緩めたいけど、キチッとしなくてはという自制の葛藤がある' },
+  'イエローグリーン+パープル':{ key:'感受性',    reading:'感受性が高まっていて優しさと傷つきやすが同居している' },
+  'イエローグリーン+マジェンタ':{ key:'ハート',  reading:'こころがホッとする包み込む思いやりと愛情を大切にしている' },
+  // G combinations
+  'グリーン+ターコイズ':   { key:'普遍性',       reading:'自分の領域確保のために全体バランスを大事にしている' },
+  'グリーン+ブルー':       { key:'きずな',       reading:'何よりも人との協調性、つながりを大切にしている' },
+  'グリーン+インディゴ':   { key:'リラックス',   reading:'緊張から開放されてリラックスする事を大切にしている' },
+  'グリーン+パープル':     { key:'拠り所',       reading:'心の平和が保てず、何かの拠り所を探している' },
+  'グリーン+マジェンタ':   { key:'包容力',       reading:'ゆったりと大らかな包容力と安定感がある' },
+  // BG combinations (derived from BG energy)
+  'ブルーグリーン+ターコイズ':{ key:'自己確立',  reading:'自分の軸をしっかり保ちながら、自分流の生き方を守っている' },
+  'ブルーグリーン+ブルー':  { key:'流れの方向',  reading:'流れを、せき止める・変える・受け流す必要を感じている' },
+  'ブルーグリーン+インディゴ':{ key:'本音',      reading:'本音と建前の葛藤があり、すぐ動かずに静観している' },
+  'ブルーグリーン+パープル':{ key:'想像的解決',  reading:'現実にとらわれない想像的解決を模索している' },
+  'ブルーグリーン+マジェンタ':{ key:'共存共栄',  reading:'他人の為に役立つことと自分のペースを守る事の狭間にある' },
+  // T combinations
+  'ターコイズ+ブルー':     { key:'考え込む',     reading:'気分が落ち込み、ひとりで静かに過ごすことを重視している' },
+  'ターコイズ+インディゴ': { key:'信頼',         reading:'神経質になっており、自分を信頼する必要を感じている' },
+  'ターコイズ+パープル':   { key:'思いやり',     reading:'大切な人と支えあいながら誠実な関係を保つ努力をしている' },
+  'ターコイズ+マジェンタ': { key:'憂鬱',         reading:'憂鬱な気分で、落ち込み、精神的な支えを必要としている' },
+  // B combinations
+  'ブルー+インディゴ':     { key:'使命感',       reading:'人のためには精一杯尽くし、自分には厳しくなりがちである' },
+  'ブルー+パープル':       { key:'精神',         reading:'精神的な活動やこころのサポートをしています' },
+  'ブルー+マジェンタ':     { key:'思いやり',     reading:'大切な人と支えあいながら誠実な関係を保つ努力をしている' },
+  // I combinations
+  'インディゴ+パープル':   { key:'深い精神性',   reading:'現実から離れて内省し、本質・創造的解決・深い癒しを望んでいる' },
+  'インディゴ+マジェンタ': { key:'使命と愛',     reading:'深い使命感と愛で人を支えながら、自分を律している' },
+  // P combinations
+  'パープル+マジェンタ':   { key:'精神と愛',     reading:'精神的なサポートと大いなる愛の力で、心身の癒しを求めている' },
+};
+
+// Get 2-color reading for now (3rd and 4th position)
+function getTwoColorReading(c1, c2) {
+  const key1 = c1.name + '+' + c2.name;
+  const key2 = c2.name + '+' + c1.name;
+  return TWO_COLOR[key1] || TWO_COLOR[key2] || null;
+}
+
+let order = [...COLORS];
+let dragSrc = null;
+
+function showStep1() {
+  switchScreen('step1');
+  order = [...COLORS];
+  renderPalette();
+  renderSorted();
+}
+
+function switchScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function renderPalette() {
+  const palette = document.getElementById('palette');
+  palette.innerHTML = '';
+  order.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'color-swatch';
+    div.style.background = c.hex;
+    div.title = c.name;
+    div.draggable = true;
+    div.dataset.idx = i;
+
+    const num = document.createElement('span');
+    num.className = 'num';
+    num.textContent = i + 1;
+    div.appendChild(num);
+
+    div.addEventListener('dragstart', e => {
+      dragSrc = i;
+      div.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    div.addEventListener('dragend', () => div.classList.remove('dragging'));
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      if (dragSrc === null || dragSrc === i) return;
+      [order[dragSrc], order[i]] = [order[i], order[dragSrc]];
+      dragSrc = null;
+      renderPalette();
+      renderSorted();
+    });
+
+    // タップで選択→交換
+    div.addEventListener('click', () => {
+      if (dragSrc === null) {
+        dragSrc = i;
+        div.classList.add('selected-tap');
+      } else {
+        if (dragSrc !== i) {
+          [order[dragSrc], order[i]] = [order[i], order[dragSrc]];
+        }
+        dragSrc = null;
+        renderPalette();
+        renderSorted();
+      }
+    });
+
+    palette.appendChild(div);
+  });
+}
+
+function renderSorted() {
+  const row = document.getElementById('sortedRow');
+  row.innerHTML = '';
+  order.forEach((c, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'sorted-slot';
+    if (i === 0 || i === 1) slot.classList.add('hl-wish');
+    if (i === 2 || i === 3) slot.classList.add('hl-now');
+    if (i === 10 || i === 11) slot.classList.add('hl-stress');
+
+    const circle = document.createElement('div');
+    circle.className = 'sorted-mini';
+    circle.style.background = c.hex;
+
+    const lbl = document.createElement('span');
+    lbl.className = 'slot-num';
+    lbl.textContent = i + 1;
+
+    slot.appendChild(circle);
+    slot.appendChild(lbl);
+    row.appendChild(slot);
+  });
+}
+
+async function showResult() {
+  switchScreen('result');
+  const grid = document.getElementById('resultGrid');
+  grid.innerHTML = '<p class="loading-text">色を読み解いています…</p>';
+
+  const wish   = [order[0], order[1]];
+  const now    = [order[2], order[3]];
+  const stress = [order[10], order[11]];
+
+  let messages;
+  try {
+    const resp = await fetch('https://ray-colors.onrender.com/api', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: buildPrompt(wish, now, stress) }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content.map(b => b.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    messages = JSON.parse(clean);
+  } catch(e) {
+    messages = {
+      now:    `あなたは今、明るく軽やかに物事を受け止めながらも、自分だけの領域をしっかりと守り、自分らしいペースを大切にしています。`,
+      stress: `自分に正直でいたい気持ちと、もっと自由に動き出したい気持ちの葛藤が生じています。どちらも本当のあなたが求めているエネルギーです。`,
+      wish:   `あなたが心の奥で求めているのは、温かく包まれるような愛と優しさ。ほっこりと安心できる日々の幸せです。`
+    };
+  }
+
+  grid.innerHTML = '';
+
+  const cards = [
+    { cls: 'card-now',    label: '今のあなたの心模様',          msg: messages.now },
+    { cls: 'card-stress', label: '心の奥に隠れているもの', msg: messages.stress },
+    { cls: 'card-wish',   label: '今あなたが願い望んでいること',  msg: messages.wish },
+  ];
+
+  cards.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = `result-card ${card.cls}`;
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-label';
+    lbl.textContent = card.label;
+
+    const msg = document.createElement('div');
+    msg.className = 'card-message';
+    msg.textContent = card.msg;
+
+    el.appendChild(lbl);
+    el.appendChild(msg);
+    grid.appendChild(el);
+
+    setTimeout(() => el.classList.add('visible'), i * 350 + 100);
+  });
+
+  // Rayからのエール
+  if (messages.cheer) {
+    const cheer = document.createElement('div');
+    cheer.className = 'cheer-card';
+    cheer.innerHTML = `
+      <div class="cheer-message">${messages.cheer}</div>
+      <div class="cheer-from">— AI Ray — 🌸</div>
+    `;
+    grid.appendChild(cheer);
+    setTimeout(() => cheer.classList.add('visible'), 4 * 350 + 100);
+  }
+
+  // 力の選択肢を表示（1番目・2番目・12番目の色）
+  const powerColors = [order[0], order[1], order[11]];
+  const powerSection = document.createElement('div');
+  powerSection.id = 'powerSection';
+  powerSection.className = 'power-section';
+
+  const pq = document.createElement('p');
+  pq.className = 'power-question';
+  pq.textContent = '今のあなたに必要な力はどれですか？';
+  powerSection.appendChild(pq);
+
+  const choices = document.createElement('div');
+  choices.className = 'power-choices';
+
+  powerColors.forEach(c => {
+    const cp = COLOR_POWER[c.name];
+    if (!cp) return;
+    const btn = document.createElement('button');
+    btn.className = 'power-btn';
+    btn.textContent = cp.power;
+    btn.addEventListener('click', () => showAffirmation(c, cp));
+    choices.appendChild(btn);
+  });
+
+  powerSection.appendChild(choices);
+
+  // アファメーション表示エリア（3つの力ボタンの直下）
+  const affArea = document.createElement('div');
+  affArea.id = 'affArea';
+  powerSection.appendChild(affArea);
+
+  grid.appendChild(powerSection);
+  powerSection.style.opacity = '1';
+}
+
+function showAffirmation(color, cp) {
+  const grad = COLOR_GRADIENTS[color.name] || { bg:'linear-gradient(135deg, #fdeee4, #fdf4f0)', text:'#ffffff', accent:'rgba(255,255,255,0.75)' };
+  const powerSection = document.getElementById('powerSection');
+  const choices = powerSection.querySelector('.power-choices');
+  const affArea = document.getElementById('affArea');
+
+  if (!choices || !affArea) { console.error('Elements not found'); return; }
+  choices.style.display = 'none';
+  affArea.innerHTML = '';
+
+  // アファメーションカード（色だけ・ボタンなし）
+  const aff = document.createElement('div');
+  aff.style.cssText = 'background:' + grad.bg + '; border-radius:24px; padding:3rem 2rem; text-align:center; margin-bottom:1.2rem;';
+
+  const label = document.createElement('div');
+  label.style.cssText = 'font-size:0.65rem; letter-spacing:0.3em; color:' + grad.accent + '; font-family:Cormorant Garamond,serif; margin-bottom:1.2rem;';
+  label.textContent = 'AFFIRMATION';
+  aff.appendChild(label);
+
+  const txt = document.createElement('div');
+  txt.style.cssText = 'font-family:Cormorant Garamond,serif; font-size:clamp(1.4rem,4vw,2rem); font-style:italic; color:' + grad.text + '; line-height:1.8;';
+  txt.textContent = cp.affirmation;
+  aff.appendChild(txt);
+
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:0.72rem; color:' + grad.accent + '; margin-top:1.2rem; line-height:2;';
+  sub.innerHTML = '声に出して、心の中で繰り返してみてください🌸<br>あなたはすでに、この力を持っています。';
+  aff.appendChild(sub);
+
+  affArea.appendChild(aff);
+
+  // ボタン群（カードの外）
+  const btnWrap = document.createElement('div');
+  btnWrap.style.cssText = 'display:flex; flex-direction:column; gap:0.8rem; width:100%;';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'share-btn';
+  saveBtn.style.cssText = 'width:100%;';
+  saveBtn.textContent = 'カードを保存する 📥';
+  saveBtn.onclick = function() { downloadShareCard(color.name, cp.affirmation); };
+  btnWrap.appendChild(saveBtn);
+
+  const backBtn = document.createElement('button');
+  backBtn.className = 'btn-retry';
+  backBtn.style.cssText = 'width:100%;';
+  backBtn.textContent = '他の力も見てみる';
+  backBtn.onclick = function() {
+    affArea.innerHTML = '';
+    choices.style.display = 'flex';
+  };
+  btnWrap.appendChild(backBtn);
+
+  const retryBtn = document.createElement('button');
+  retryBtn.className = 'btn-retry';
+  retryBtn.style.cssText = 'width:100%;';
+  retryBtn.textContent = 'もう一度試す';
+  retryBtn.onclick = function() { showStep1(); };
+  btnWrap.appendChild(retryBtn);
+
+  affArea.appendChild(btnWrap);
+}
+
+function buildPrompt(wish, now, stress) {
+  const kw = (colors, type) => colors.map(c => {
+    const k = KEYWORDS[c.name];
+    const dir = c.direction;
+    if (type === 'wish')   return `${c.name}【${dir}】（${k.positive.slice(0,6).join('・')}）`;
+    if (type === 'now')    return `${c.name}【${dir}】（表：${k.positive.slice(0,4).join('・')} ／ 裏：${k.negative.slice(0,3).join('・')}）`;
+    if (type === 'stress') return `${c.name}【${dir}】（本来求めているもの：${k.positive.slice(0,4).join('・')} ／ 今の状態：${k.minus.join('・')}）`;
+  }).join('、');
+
+  return `あなたは30年のキャリアを持つ色彩心理の専門家です。
+以下の原理を深く理解した上で、その人の心模様を言葉にしてください。
+
+【色彩エネルギーの宇宙軸】
+色は宇宙から地球の核まで人体を貫く一本の軸としてつながっています：
+P（宇宙・松果体）→ I（理解・思考・左脳）→ B（言葉・誠実・喉）→ T（自己の芯・免疫・胸腺）→ BG（自己確立・免疫力）→ G（恩恵・貢献・心臓）→ YG（愛・平和・心臓）→ Y（希望・知性・太陽神経叢）→ O（満足・腹のリズム・生命の波動）→ RO（達成・腹の底力）→ R（前進・足元・血の巡り）→ M（大いなる母・地球の核・すべての生命との共存）
+
+【色彩エネルギーの方向性】
+・外向・自律（R・RO）→ 足元から湧く力、腹の底から自らが動く情熱
+・外向・他律（O・Y）→ 腹のリズムと知性の輝き、周りと響き合いながら広がる
+・内向・自律（BG・T）→ 免疫力・芯の強さ、自分を守る揺るぎない力
+・内向・他律（B・I）→ 聴く・語る・考える、頭で理解しようとする誠実さ
+・中立（YG・G）→ 心臓から広がる愛と安らぎ、人とのつながり
+・大中立・他律（P）→ 宇宙の摂理・直感・全神経とつながる感性
+・大中立・自律（M）→ 地球の核・母なる大地の愛、すべての生命と共存するエネルギー
+
+【重要なパターン認識】
+以下のパターンを参考に、その人の状況を深く読み解いてください：
+
+パターン1「ノリノリ活動期」
+→ 外向性（R・RO・O・Y）が上位に固まる
+→ 今まさに外へ向かって動きたい、楽しく何にでも反応できる活動期。難しく考えることより行動が優先
+
+パターン2「悩みの真っ只中」
+→ B・Iが現状、外向性が願望、中立（YG・G・BG）が心の奥
+→ 頭で整理・理解しようとしている。ハートチャクラが後ろにあり心が落ち着かない。具体的に動き出したいと願っている
+
+パターン3「楽しいけど少し空虚」
+→ B・YGが願望、O・Yが現状、P・Iが心の奥
+→ 毎日楽しく軽やかだが少し散漫。深い思慮や創造性が欠けている。誰かの力を借りて依存と協力の中で生きたい
+
+パターン4「頑張りすぎて心身が悲鳴」
+→ G・Yが願望、O・Rが現状、BG・YGが心の奥
+→ 充実して達成感もあるが、ハートチャクラ・免疫力が保てていない。平和で健やかな日々を取り戻したいと願っている
+
+パターン5「頭だけで生きて体と心が置き去り」
+→ Y・Gが願望、I・Bが現状、O・YGが心の奥
+→ 義務感・使命感で頭脳労働中。旅行したい・休みたい・楽しいことしたいが「今は無理」とあきらめている。子育て・介護・調停など人生の重大局面にいることが多い
+
+パターン6「ポテンシャルをあえて封印」
+→ O・Bが願望、Y・Gが現状、R・Iが心の奥
+→ 平穏無事でオープンマインドな日々。本当はもっと本気で突き進める力・深く考える力があるのに、平穏を崩したくないためあえて使わない選択をしている
+
+パターン7「愛する人のために自分を燃やし尽くしている」
+→ P・YGが願望、M・Bが現状、Y・Oが心の奥
+→ 家族・恋人・子供など愛する人を支えることが現在の最重要テーマ。未来への希望・喜びが見えない。心身ともに癒されたいという切なる願いがある。限界に近いサインかもしれない
+
+---
+
+【3・4番目：今の現状】: ${kw(now, 'now')}
+2色の組み合わせ読み: ${(()=>{ const r=getTwoColorReading(now[0], now[1]); return r ? '「'+r.key+'」→ '+r.reading : 'エネルギーの方向性から読み解く'; })()}
+→ 葛藤ルールは現状（3・4番目）にも同様に適用してください。ただし現状は今まさに生きている状態なので、11・12番目より少し緩和した表現で。葛藤がある場合は「〜と〜の間でバランスを取りながら」「〜しながらも〜を感じている」のようなニュアンスで。
+【心の奥に隠れているもの】: ${kw(stress, 'stress')}
+→ 以下の葛藤ルールに従って読み解いてください：
+
+【葛藤ルール】
+■大きな葛藤（はっきり「葛藤が生じています」と表現）：
+・R・RO ⇔ B・I（行動・情熱の力 vs 誠実に考え従う力）
+
+■中くらいの葛藤（「〜と〜の間で揺れています」と表現）：
+・R・RO ⇔ BG・T（外へ向かう力 vs 内へ守る力）
+・O・Y ⇔ B・I（自由に広がりたい vs 誠実に考えたい）
+・O・Y ⇔ BG・T（解放・楽しさ vs 自分の領域を守りたい）
+
+■葛藤なし→合わせ読み（同じ方向性の枯渇として表現）：
+・R＋RO → 「エネルギー・一歩踏み出す勇気が湧いてこない、元気の源が枯渇している」
+・O＋Y → 「楽しさ・希望・解放感が枯渇している」
+・O＋R または R＋O → 両方とも外向性。「もっと力を発揮したい・挑戦して達成感を得たい・自由に動きたい」というエネルギーが枯渇している。「葛藤」とは読まない。同じ方向性の枯渇として表現する
+・BG＋T → 「自己の芯・免疫力・自分らしさが枯渇している」
+・B＋I → 「深く考える力・誠実さ・理解力が枯渇している」
+・YG＋G → 「愛・安らぎ・心の平和が枯渇している」
+・P＋M → 「精神的土台・大いなる愛のエネルギーが枯渇している」
+・M＋T → 葛藤なし。共通するのは「自律的」と「守り」→自分の力で自分を守っている。中立と内向の視点から「内面のバランスと調和を大切にしながら居場所を確保し、大いなる安定を生み出している」と合わせ読みする。「葛藤」「重たい気持ち」「自由に動きたい」は使わない
+・R＋O＋M（またはその組み合わせ）→ 共通は「自律的」。ROはもっと力を発揮・挑戦・達成感を求めている。Mは大いなる愛で周りを支えたい。この思いが押さえられている状況として読む。「葛藤」とは読まない
+・中立系（YG・G・P・M混在）→ 合わせて心の安らぎと土台の枯渇として読む
+【1・2番目：今あなたが願い望んでいること】
+→ 1番目「${wish[0].name}【${wish[0].direction}】」はその願望を叶えるための「方法・しようとしていること」
+→ 2番目「${wish[1].name}【${wish[1].direction}】」が現時点での「本当の願望・最も強く求めているもの」
+キーワード: ${kw(wish, 'wish')}
+
+以下の3つのメッセージをこの順番で日本語で作成してください。
+- 各メッセージは100〜130文字程度
+- 温かく寄り添う表現で
+- 上記パターンに近い場合はそのニュアンスを自然に反映させる
+- まず共感と承認から入り、押しつけがましくなく
+- 色の名前を一切使わないこと。純粋に人の言葉・心の言葉として表現すること
+- 3つが一つの物語として流れるように
+
+さらに、3つのメッセージを読んだ人へのエールを1つ作成してください。
+- 20〜30文字程度の短い一言
+- 「感動した」「わかってくれた」「励まされた」と感じてもらえるような言葉
+- AI Rayからのメッセージとして、温かく光のように届く言葉で
+- 例：「今日も、あなたの光を信じて。」「その優しさは、あなたの強さです。」
+
+必ず以下のJSONのみを返してください（前後のテキスト・バッククォート不要）:
+{"now":"...","stress":"...","wish":"...","cheer":"..."}`;
+}
+
+
+const LOGO_DATA = 'data:image/png;base64,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';
+
+function downloadShareCard(colorName, affirmationText) {
+  const grad = COLOR_GRADIENTS[colorName] || { bg:'linear-gradient(135deg, #fdeee4, #fdf4f0)', text:'#fff' };
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const gradColors = parseGradient(grad.bg);
+  const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradColors.forEach((c, i) => grd.addColorStop(i / (gradColors.length - 1), c));
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Soft overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Decorative circles
+  [400, 280, 160].forEach((r, i) => {
+    ctx.beginPath();
+    ctx.arc(540, 960, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,255,255,${0.04 + i * 0.02})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  const textColor = grad.text === '#fff' ? '#ffffff' : '#3d2b1f';
+  const subColor = grad.text === '#fff' ? 'rgba(255,255,255,0.75)' : 'rgba(61,43,31,0.65)';
+
+  // Affirmation label (上部)
+  ctx.fillStyle = subColor;
+  ctx.font = '300 34px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('A F F I R M A T I O N', 540, 280);
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(240, 320);
+  ctx.lineTo(840, 320);
+  ctx.stroke();
+
+  // Main text with word wrap
+  ctx.fillStyle = textColor;
+  ctx.font = '500 66px Noto Serif JP, sans-serif';
+  ctx.textAlign = 'center';
+
+  const chars = affirmationText.split('');
+  const lines = [];
+  let line = '';
+  const maxWidth = 820;
+  for (let char of chars) {
+    const test = line + char;
+    if (ctx.measureText(test).width > maxWidth) {
+      lines.push(line);
+      line = char;
+    } else {
+      line = test;
+    }
+  }
+  lines.push(line);
+
+  const lineHeight = 110;
+  const totalH = lines.length * lineHeight;
+  const startY = 960 - totalH / 2 + 40;
+  lines.forEach((l, i) => {
+    ctx.fillText(l, 540, startY + i * lineHeight);
+  });
+
+  // Dots decoration
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  [-50, 0, 50].forEach(x => {
+    ctx.beginPath();
+    ctx.arc(540 + x, startY + totalH + 50, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Ray より
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = 'italic 300 52px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('— Ray —', 540, 1550);
+
+  // Bottom divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(240, 1620);
+  ctx.lineTo(840, 1620);
+  ctx.stroke();
+
+  // JCLTA (一番下)
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = 'bold 60px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('JCLTA', 540, 1710);
+
+  ctx.fillStyle = subColor;
+  ctx.font = '300 26px Georgia, serif';
+  ctx.fillText('Japan Color Light Therapy Association', 540, 1760);
+
+  // Download
+  const link = document.createElement('a');
+  link.download = `ray-affirmation-${colorName}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function parseGradient(gradStr) {
+  const matches = gradStr.match(/#[0-9a-fA-F]{3,8}/g);
+  return matches || ['#fdeee4', '#fdf4f0'];
+}
+
+showStep1();
+</script>
+</body>
+</html>
