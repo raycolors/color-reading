@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カラーセラピーセッション｜Ray Colors</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#fdf8f2; --bg2:#fef4eb; --surface:#fffcf8;
+    --rose:#c0745a; --rose-mid:#d9967e; --rose-pale:#f5e4dc;
+    --text:#3d2b1f; --text-mid:#7a5c4a; --text-muted:#b09080;
+    --border:rgba(192,116,90,0.18);
+    --green:#6a9e82; --purple:#8a78b8;
+  }
+  body { background:var(--bg); color:var(--text); font-family:'Noto Serif JP',serif; min-height:100vh; overflow-x:hidden; }
+
+  /* HEADER */
+  .session-header { text-align:center; padding:2.5rem 1.5rem 1.5rem; background:radial-gradient(ellipse at 50% 0%,#fdeee4 0%,#fdf8f2 70%); border-bottom:1px solid var(--border); }
+  .session-eyebrow { font-family:'Cormorant Garamond',serif; font-size:0.7rem; letter-spacing:0.35em; color:var(--rose); text-transform:uppercase; }
+  .session-title { font-family:'Cormorant Garamond',serif; font-size:clamp(1.5rem,4vw,2.2rem); font-weight:300; font-style:italic; color:var(--text); margin-top:0.4rem; letter-spacing:0.06em; }
+  .color-preview { display:flex; gap:6px; justify-content:center; margin-top:1rem; flex-wrap:wrap; }
+  .cp-slot { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .cp-dot { width:28px; height:28px; border-radius:50%; box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+  .cp-num { font-size:0.5rem; color:var(--text-muted); }
+
+  /* LAYOUT */
+  .session-body { max-width:680px; margin:0 auto; padding:1.5rem 1rem 6rem; display:flex; flex-direction:column; gap:0; }
+  .session-date { text-align:center; font-size:0.68rem; color:var(--text-muted); letter-spacing:0.15em; margin-bottom:1.5rem; padding-top:1rem; }
+
+  /* CHAT */
+  .chat-wrap { display:flex; flex-direction:column; gap:1.2rem; }
+  .msg { display:flex; gap:0.8rem; align-items:flex-start; opacity:0; transform:translateY(12px); transition:opacity 0.5s ease,transform 0.5s ease; }
+  .msg.visible { opacity:1; transform:translateY(0); }
+  .msg.ai { flex-direction:row; }
+  .msg.user { flex-direction:row-reverse; }
+  .msg-avatar { width:36px; height:36px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .ai .msg-avatar { background:linear-gradient(135deg,var(--rose-pale),#fdeee4); color:var(--rose); border:1px solid var(--border); font-family:'Cormorant Garamond',serif; font-style:italic; font-size:0.72rem; letter-spacing:0.05em; }
+  .user .msg-avatar { background:linear-gradient(135deg,#e8f4ee,#d4ead9); color:var(--green); border:1px solid rgba(106,158,130,0.2); font-size:1.1rem; }
+  .msg-bubble { max-width:85%; padding:1rem 1.2rem; border-radius:18px; font-size:0.88rem; line-height:2; font-weight:300; }
+  .ai .msg-bubble { background:var(--surface); border:1px solid var(--border); border-top-left-radius:4px; color:var(--text-mid); box-shadow:0 2px 12px rgba(192,116,90,0.06); }
+  .user .msg-bubble { background:var(--rose-pale); border:1px solid rgba(192,116,90,0.15); border-top-right-radius:4px; color:var(--text); }
+
+  /* TYPING */
+  .typing-bubble { display:flex; align-items:center; gap:5px; padding:0.9rem 1.2rem; background:var(--surface); border:1px solid var(--border); border-radius:18px; border-top-left-radius:4px; box-shadow:0 2px 12px rgba(192,116,90,0.06); }
+  .typing-dot { width:6px; height:6px; border-radius:50%; background:var(--rose-mid); animation:typingPulse 1.2s ease infinite; }
+  .typing-dot:nth-child(2){animation-delay:0.2s;}
+  .typing-dot:nth-child(3){animation-delay:0.4s;}
+
+  /* CHOICES */
+  .choice-wrap { display:flex; flex-direction:column; gap:0.6rem; padding-left:44px; opacity:0; transform:translateY(8px); transition:opacity 0.4s ease,transform 0.4s ease; }
+  .choice-wrap.visible { opacity:1; transform:translateY(0); }
+  .choice-btn { padding:0.8rem 1.4rem; background:var(--surface); border:1px solid var(--border); border-radius:50px; color:var(--text-mid); font-family:'Noto Serif JP',serif; font-size:0.85rem; letter-spacing:0.08em; cursor:pointer; transition:all 0.25s; text-align:left; line-height:1.6; }
+  .choice-btn:hover { background:var(--rose-pale); border-color:var(--rose-mid); color:var(--rose); transform:translateX(4px); box-shadow:0 3px 12px rgba(192,116,90,0.12); }
+  .choice-btn.selected { background:var(--rose-pale); border-color:var(--rose); color:var(--rose); }
+  .choice-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+
+  /* 3色パワーカード */
+  .power-cards-wrap { padding-left:44px; opacity:0; transform:translateY(8px); transition:opacity 0.4s ease,transform 0.4s ease; }
+  .power-cards-wrap.visible { opacity:1; transform:translateY(0); }
+  .power-cards { display:flex; flex-direction:column; gap:0.7rem; }
+  .power-card-btn { display:flex; align-items:center; gap:0.9rem; padding:0.9rem 1.2rem; background:var(--surface); border:1px solid var(--border); border-radius:16px; cursor:pointer; transition:all 0.25s; text-align:left; font-family:'Noto Serif JP',serif; }
+  .power-card-btn:hover { background:var(--rose-pale); border-color:var(--rose-mid); transform:translateX(4px); box-shadow:0 3px 14px rgba(192,116,90,0.13); }
+  .power-card-btn:disabled { opacity:0.45; cursor:not-allowed; transform:none; }
+  .power-color-dot { width:32px; height:32px; border-radius:50%; flex-shrink:0; box-shadow:0 1px 6px rgba(0,0,0,0.15); }
+  .power-card-text { display:flex; flex-direction:column; gap:2px; }
+  .power-card-name { font-size:0.75rem; color:var(--text-muted); letter-spacing:0.1em; }
+  .power-card-keyword { font-size:0.92rem; color:var(--text); font-weight:400; letter-spacing:0.06em; }
+
+  /* SCALE */
+  .scale-wrap { padding-left:44px; opacity:0; transform:translateY(8px); transition:opacity 0.4s ease,transform 0.4s ease; }
+  .scale-wrap.visible { opacity:1; transform:translateY(0); }
+  .scale-buttons { display:flex; gap:6px; flex-wrap:wrap; }
+  .scale-btn { width:44px; height:44px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text-mid); font-family:'Noto Serif JP',serif; font-size:0.9rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; }
+  .scale-btn:hover { background:var(--rose-pale); border-color:var(--rose); color:var(--rose); transform:scale(1.1); }
+  .scale-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+
+  /* INPUT */
+  .input-area { position:fixed; bottom:0; left:0; right:0; background:rgba(253,248,242,0.95); backdrop-filter:blur(12px); border-top:1px solid var(--border); padding:1rem 1rem 1.2rem; display:none; }
+  .input-area.visible { display:block; }
+  .input-inner { max-width:680px; margin:0 auto; display:flex; gap:0.6rem; align-items:flex-end; }
+  .input-field { flex:1; padding:0.8rem 1.2rem; border:1px solid var(--border); border-radius:24px; background:var(--surface); font-family:'Noto Serif JP',serif; font-size:0.88rem; color:var(--text); resize:none; min-height:44px; max-height:120px; outline:none; transition:border-color 0.2s; line-height:1.7; }
+  .input-field:focus { border-color:var(--rose-mid); }
+  .input-field::placeholder { color:var(--text-muted); }
+  .send-btn { width:44px; height:44px; border-radius:50%; background:var(--rose); border:none; color:#fff; cursor:pointer; flex-shrink:0; transition:all 0.25s; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+  .send-btn:hover { background:var(--rose-mid); transform:scale(1.05); }
+  .send-btn:disabled { background:#d8c8c0; cursor:not-allowed; transform:none; }
+
+  /* KARTE */
+  .karte-section { margin-top:2rem; opacity:0; transform:translateY(20px); transition:opacity 0.7s ease,transform 0.7s ease; }
+  .karte-section.visible { opacity:1; transform:translateY(0); }
+  .karte-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2rem; box-shadow:0 4px 24px rgba(192,116,90,0.08); }
+  .karte-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-style:italic; color:var(--rose); letter-spacing:0.08em; border-bottom:1px solid var(--border); padding-bottom:0.8rem; margin-bottom:1.4rem; text-align:center; }
+  .karte-row { display:flex; flex-direction:column; gap:1rem; margin-bottom:1.2rem; }
+  .karte-item { display:flex; flex-direction:column; gap:0.3rem; }
+  .karte-label { font-size:0.62rem; letter-spacing:0.25em; color:var(--rose); text-transform:uppercase; font-family:'Cormorant Garamond',serif; }
+  .karte-value { font-size:0.88rem; color:var(--text-mid); line-height:1.9; font-weight:300; }
+  .karte-divider { width:100%; height:1px; background:var(--border); margin:0.5rem 0 1rem; }
+  .karte-supplement { background:linear-gradient(135deg,#fdeee4 0%,#fdf4f0 100%); border-radius:14px; padding:1.2rem 1.4rem; margin-top:0.6rem; }
+  .karte-supplement-label { font-size:0.62rem; letter-spacing:0.25em; color:var(--rose); text-transform:uppercase; font-family:'Cormorant Garamond',serif; margin-bottom:0.7rem; }
+  .supplement-color { display:flex; align-items:center; gap:0.8rem; }
+  .supplement-dot { width:36px; height:36px; border-radius:50%; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+  .supplement-text { font-size:0.95rem; color:var(--text); font-weight:400; }
+  .supplement-keyword { font-size:0.8rem; color:var(--rose); margin-top:0.2rem; }
+  .supplement-aff { font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; color:var(--text-mid); margin-top:0.8rem; line-height:1.8; text-align:center; }
+  .karte-action { display:flex; flex-direction:column; gap:0.8rem; margin-top:1.6rem; }
+  .karte-dl-btn { padding:0.9rem 1.5rem; background:var(--rose); border:none; color:#fff; font-family:'Noto Serif JP',serif; font-size:0.85rem; letter-spacing:0.15em; cursor:pointer; border-radius:50px; transition:all 0.3s; box-shadow:0 4px 16px rgba(192,116,90,0.3); }
+  .karte-dl-btn:hover { background:var(--rose-mid); transform:translateY(-2px); }
+  .karte-retry-btn { padding:0.9rem 1.5rem; background:transparent; border:1px solid var(--rose-mid); color:var(--rose); font-family:'Noto Serif JP',serif; font-size:0.85rem; letter-spacing:0.15em; cursor:pointer; border-radius:50px; transition:all 0.3s; text-align:center; display:block; text-decoration:none; }
+  .karte-retry-btn:hover { background:var(--rose-pale); }
+
+  @keyframes typingPulse { 0%,100%{opacity:0.3;transform:scale(0.85);}50%{opacity:1;transform:scale(1);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+</style>
+</head>
+<body>
+
+<div class="session-header">
+  <div class="session-eyebrow">Color Session</div>
+  <div class="session-title">心の色とともに、歩む</div>
+  <div class="color-preview" id="colorPreview"></div>
+</div>
+
+<div class="session-body">
+  <div class="session-date" id="sessionDate"></div>
+  <div class="chat-wrap" id="chatWrap"></div>
+  <div class="karte-section" id="karteSection"></div>
+</div>
+
+<div class="input-area" id="inputArea">
+  <div class="input-inner">
+    <textarea class="input-field" id="inputField"
+      placeholder="ここに気持ちを書いてください…" rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">✦</button>
+  </div>
+</div>
+
+<script>
+// ── 色データ ──
+const COLORS = [
+  {name:'レッド',          hex:'#E82020'},
+  {name:'レッドオレンジ',  hex:'#E85A10'},
+  {name:'オレンジ',        hex:'#F09000'},
+  {name:'イエロー',        hex:'#F5D800'},
+  {name:'イエローグリーン',hex:'#96D400'},
+  {name:'グリーン',        hex:'#18A838'},
+  {name:'ブルーグリーン',  hex:'#009E7A'},
+  {name:'ターコイズ',      hex:'#00B4C8'},
+  {name:'ブルー',          hex:'#1878C8'},
+  {name:'インディゴ',      hex:'#2830A0'},
+  {name:'パープル',        hex:'#7030A0'},
+  {name:'マジェンタ',      hex:'#C82080'},
+];
+
+const COLOR_POWER = {
+  'レッド':          {power:'情熱と行動の力',     keyword:'活力・生命力・情熱・積極性・実行力',    affirmation:'私は今、力強く前へ進んでいる'},
+  'レッドオレンジ':  {power:'勇気と挑戦の力',     keyword:'挑戦・達成感・競争力・勇気・フロンティア精神', affirmation:'私は勇気を持って挑戦している'},
+  'オレンジ':        {power:'自由と喜びの力',     keyword:'自由・陽気・好奇心・社交性・温かさ',   affirmation:'私は自由に、喜びとともに羽ばたいている'},
+  'イエロー':        {power:'希望と向上の力',     keyword:'希望・楽天性・聡明さ・知識欲・幸福感', affirmation:'私の未来は希望に満ちあふれている'},
+  'イエローグリーン':{power:'優しさと安らぎの力', keyword:'優しさ・穏やかさ・安心・共感・受容性', affirmation:'私は優しさに包まれ、安らいでいる'},
+  'グリーン':        {power:'調和と平和の力',     keyword:'調和・自然体・安定・平和・バランス',   affirmation:'私は自然体で、穏やかに調和している'},
+  'ブルーグリーン':  {power:'自己を知る力',       keyword:'自己認識・自分軸・忍耐力・洞察力・自立', affirmation:'私は私自身を深く知り、信頼している'},
+  'ターコイズ':      {power:'自分らしくある力',   keyword:'オリジナリティ・自立・創造性・自分軸・マイウェイ', affirmation:'私は私らしく、自分の道を歩んでいる'},
+  'ブルー':          {power:'誠実に向き合う力',   keyword:'誠実・責任感・コミュニケーション力・忍耐・計画性', affirmation:'私は誠実に、大切な人と向き合っている'},
+  'インディゴ':      {power:'深く理解する力',     keyword:'洞察力・直感・理想・創造力・未来志向', affirmation:'私は深く理解し、冷静に見渡している'},
+  'パープル':        {power:'感性と慈悲の力',     keyword:'感性・美意識・慈悲・霊性・カリスマ性', affirmation:'私の感性は、宇宙とつながっている'},
+  'マジェンタ':      {power:'大きく包む愛の力',   keyword:'包容力・博愛・母性・献身・無償の愛',   affirmation:'私は大いなる愛に包まれ、安心している'},
+};
+
+// ── URLパラメータ ──
+function getColorOrder() {
+  const params = new URLSearchParams(location.search);
+  const c = params.get('colors');
+  if (c) {
+    const indices = c.split(',').map(Number);
+    return indices.map(i => COLORS[i]).filter(Boolean);
+  }
+  return [...COLORS]; // デモ用
+}
+
+const colorOrder = getColorOrder();
+// 3色の力：1番目・2番目・12番目
+const powerColors = [colorOrder[0], colorOrder[1], colorOrder[11]];
+
+// ── セッション状態 ──
+let sessionState = 'greeting';
+let selectedPowerColor = null;
+let conversationHistory = [];
+let karteData = {
+  now:'', stress:'', wish:'',
+  goal:'', scale:0, action:'',
+  supplement:null, affirmation:''
+};
+
+// ── 初期化 ──
+window.addEventListener('load', () => {
+  const now2 = new Date();
+  document.getElementById('sessionDate').textContent =
+    now2.getFullYear()+'年'+(now2.getMonth()+1)+'月'+now2.getDate()+'日';
+
+  const preview = document.getElementById('colorPreview');
+  colorOrder.slice(0,12).forEach((c,i) => {
+    const slot = document.createElement('div');
+    slot.className = 'cp-slot';
+    const dot = document.createElement('div');
+    dot.className = 'cp-dot';
+    dot.style.background = c.hex;
+    const num = document.createElement('span');
+    num.className = 'cp-num';
+    num.textContent = i+1;
+    slot.appendChild(dot);
+    slot.appendChild(num);
+    preview.appendChild(slot);
+  });
+
+  startSession();
+});
+
+// ── セッション開始 ──
+async function startSession() {
+  showTyping();
+  await delay(1400);
+  const greeting = await callAI(buildGreetingPrompt(), true);
+  hideTyping();
+
+  addAIMessage(greeting.intro || 'ようこそ。今日のあなたの色を受け取りました。');
+  await delay(700);
+  addAIMessage(greeting.reading_summary || 'カラーリーディングの結果を拝見しました。');
+  await delay(700);
+  addAIMessage(greeting.first_question || '今日ここで、何を発見して帰りたいですか？');
+
+  conversationHistory.push({role:'assistant', content:[greeting.intro, greeting.reading_summary, greeting.first_question].join('\n')});
+  sessionState = 'goal_exploration';
+  showInput();
+}
+
+// ── メッセージ送信 ──
+async function sendMessage() {
+  const field = document.getElementById('inputField');
+  const text = field.value.trim();
+  if (!text) return;
+  field.value = '';
+  field.style.height = '';
+  document.getElementById('sendBtn').disabled = true;
+  addUserMessage(text);
+  conversationHistory.push({role:'user', content:text});
+  await handleFlow(text);
+  document.getElementById('sendBtn').disabled = false;
+}
+
+// ── フロー管理 ──
+async function handleFlow(userInput) {
+  showTyping();
+  await delay(900 + Math.random()*700);
+  const resp = await callAI(buildSessionPrompt(userInput), true);
+  hideTyping();
+
+  if (resp.message) {
+    addAIMessage(resp.message);
+    conversationHistory.push({role:'assistant', content:resp.message});
+  }
+
+  if (resp.next_state) sessionState = resp.next_state;
+  if (resp.karte_update) Object.assign(karteData, resp.karte_update);
+
+  // 通常選択肢
+  if (resp.choices && resp.choices.length > 0) {
+    await delay(400);
+    showChoices(resp.choices);
+    return;
+  }
+
+  // 3色パワー選択
+  if (resp.show_power_selection) {
+    await delay(500);
+    showPowerCards();
+    return;
+  }
+
+  // スケーリング
+  if (resp.show_scale) {
+    await delay(400);
+    showScaleButtons();
+    return;
+  }
+
+  // 完了
+  if (resp.session_complete) {
+    await delay(600);
+    hideInput();
+    await buildKarte();
+  }
+}
+
+// ── 3色パワーカード表示 ──
+function showPowerCards() {
+  const wrap = document.getElementById('chatWrap');
+  const cardWrap = document.createElement('div');
+  cardWrap.className = 'power-cards-wrap';
+  const cards = document.createElement('div');
+  cards.className = 'power-cards';
+
+  powerColors.forEach((c, i) => {
+    const cp = COLOR_POWER[c.name] || {};
+    const btn = document.createElement('button');
+    btn.className = 'power-card-btn';
+    btn.innerHTML = `
+      <div class="power-color-dot" style="background:${c.hex}"></div>
+      <div class="power-card-text">
+        <div class="power-card-name">${['方法の力','本当の願いの力','大いなる土台の力'][i]}</div>
+        <div class="power-card-keyword">${cp.power || c.name} — ${(cp.keyword||'').split('・').slice(0,3).join('・')}</div>
+      </div>
+    `;
+    btn.onclick = () => handlePowerSelect(c, btn, cardWrap);
+    cards.appendChild(btn);
+  });
+
+  cardWrap.appendChild(cards);
+  wrap.appendChild(cardWrap);
+  setTimeout(() => cardWrap.classList.add('visible'), 100);
+  scrollBottom();
+}
+
+// ── パワー色選択後 ──
+async function handlePowerSelect(color, btn, cardWrap) {
+  cardWrap.querySelectorAll('.power-card-btn').forEach(b => b.disabled = true);
+  btn.style.borderColor = 'var(--rose)';
+  btn.style.background = 'var(--rose-pale)';
+
+  selectedPowerColor = color;
+  karteData.supplement = color;
+  karteData.affirmation = (COLOR_POWER[color.name]||{}).affirmation || '';
+
+  const cp = COLOR_POWER[color.name] || {};
+  addUserMessage(cp.power || color.name);
+  conversationHistory.push({role:'user', content: cp.power + 'を選びました'});
+
+  sessionState = 'miracle_question';
+  await handleFlow('「' + cp.power + '」の力を選びました');
+}
+
+// ── 選択肢 ──
+function showChoices(choices) {
+  const wrap = document.getElementById('chatWrap');
+  const cw = document.createElement('div');
+  cw.className = 'choice-wrap';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = c;
+    btn.onclick = () => {
+      cw.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+      btn.classList.add('selected');
+      addUserMessage(c);
+      conversationHistory.push({role:'user', content:c});
+      setTimeout(async () => {
+        await handleFlow(c);
+        document.getElementById('sendBtn').disabled = false;
+      }, 300);
+    };
+    cw.appendChild(btn);
+  });
+  wrap.appendChild(cw);
+  setTimeout(() => cw.classList.add('visible'), 100);
+  scrollBottom();
+}
+
+// ── スケール ──
+function showScaleButtons() {
+  const wrap = document.getElementById('chatWrap');
+  const sw = document.createElement('div');
+  sw.className = 'scale-wrap';
+  const btns = document.createElement('div');
+  btns.className = 'scale-buttons';
+  for (let i=1; i<=10; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'scale-btn';
+    btn.textContent = i;
+    btn.onclick = () => {
+      sw.querySelectorAll('.scale-btn').forEach(b => b.disabled = true);
+      karteData.scale = i;
+      addUserMessage(i+'点です');
+      conversationHistory.push({role:'user', content:i+'点です'});
+      setTimeout(async () => {
+        await handleFlow(i+'点です');
+        document.getElementById('sendBtn').disabled = false;
+      }, 300);
+    };
+    btns.appendChild(btn);
+  }
+  sw.appendChild(btns);
+  wrap.appendChild(sw);
+  setTimeout(() => sw.classList.add('visible'), 100);
+  scrollBottom();
+}
+
+// ── カルテ生成 ──
+async function buildKarte() {
+  showTyping();
+  await delay(1500);
+  const karte = await callAI(buildKartePrompt(), true);
+  hideTyping();
+
+  if (karte.final_message) {
+    addAIMessage(karte.final_message);
+  }
+  if (karte.goal)           karteData.goal         = karte.goal;
+  if (karte.action)         karteData.action       = karte.action;
+  if (karte.wish_summary)   karteData.wish         = karte.wish_summary;
+  if (karte.now_summary)    karteData.now          = karte.now_summary;
+  if (karte.stress_summary) karteData.stress       = karte.stress_summary;
+  if (karte.color_message)  karteData.colorMessage = karte.color_message;
+
+  await delay(800);
+  renderKarte();
+}
+
+// ── カルテ描画 ──
+function renderKarte() {
+  const section = document.getElementById('karteSection');
+  const supp = karteData.supplement;
+  const cp = supp ? (COLOR_POWER[supp.name]||{}) : {};
+
+  section.innerHTML = `
+    <div class="karte-card">
+      <div class="karte-title">✦ セッションカルテ ✦</div>
+      <div class="karte-row">
+        <div class="karte-item">
+          <div class="karte-label">今のあなたの心模様</div>
+          <div class="karte-value">${karteData.now||'─'}</div>
+        </div>
+        <div class="karte-item">
+          <div class="karte-label">心の奥にあるもの</div>
+          <div class="karte-value">${karteData.stress||'─'}</div>
+        </div>
+        <div class="karte-item">
+          <div class="karte-label">あなたの願い</div>
+          <div class="karte-value">${karteData.wish||'─'}</div>
+        </div>
+      </div>
+      <div class="karte-divider"></div>
+      <div class="karte-row">
+        <div class="karte-item">
+          <div class="karte-label">目標</div>
+          <div class="karte-value">${karteData.goal||'─'}</div>
+        </div>
+        <div class="karte-item">
+          <div class="karte-label">スケール（現在）</div>
+          <div class="karte-value">${karteData.scale ? karteData.scale+' / 10' : '─'}</div>
+        </div>
+        <div class="karte-item">
+          <div class="karte-label">今日からの行動課題</div>
+          <div class="karte-value">${karteData.action||'─'}</div>
+        </div>
+      </div>
+      <div class="karte-divider"></div>
+      ${supp ? `
+      <div class="karte-supplement">
+        <div class="karte-supplement-label">あなたの一歩を後押しする色のパワー</div>
+        <div class="supplement-color">
+          <div class="supplement-dot" style="background:${supp.hex}"></div>
+          <div>
+            <div class="supplement-text">${supp.name} ─ ${cp.power||''}</div>
+            <div class="supplement-keyword">${cp.keyword||''}</div>
+          </div>
+        </div>
+        <div class="supplement-aff">${cp.affirmation||''}</div>
+        ${karteData.colorMessage ? `
+        <div style="margin-top:1.2rem; padding-top:1rem; border-top:1px solid rgba(192,116,90,0.15);">
+          <div style="font-size:0.62rem; letter-spacing:0.25em; color:var(--rose); text-transform:uppercase; font-family:'Cormorant Garamond',serif; margin-bottom:0.6rem;">色からのメッセージ</div>
+          <div style="font-size:0.92rem; color:var(--text-mid); line-height:2; font-weight:300; font-style:italic;">${karteData.colorMessage}</div>
+        </div>` : ''}
+      </div>` : ''}
+      <div class="karte-action">
+        <button class="karte-dl-btn" onclick="downloadKarte()">カルテを保存する 📥</button>
+        <a class="karte-retry-btn" href="index.html">もう一度カラーリーディングをする</a>
+      </div>
+    </div>
+  `;
+  setTimeout(() => section.classList.add('visible'), 100);
+  setTimeout(() => section.scrollIntoView({behavior:'smooth', block:'start'}), 200);
+}
+
+// ── カルテ保存 ──
+function downloadKarte() {
+  const supp = karteData.supplement;
+  const cp = supp ? (COLOR_POWER[supp.name]||{}) : {};
+  const now2 = new Date();
+  const dateStr = now2.getFullYear()+'.'+(now2.getMonth()+1)+'.'+now2.getDate();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080; canvas.height = 1680;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#fdf8f2';
+  ctx.fillRect(0,0,1080,1680);
+
+  const hg = ctx.createLinearGradient(0,0,1080,0);
+  hg.addColorStop(0,'#fdeee4'); hg.addColorStop(1,'#fdf8f2');
+  ctx.fillStyle = hg;
+  ctx.fillRect(0,0,1080,180);
+
+  ctx.fillStyle = '#c0745a';
+  ctx.font = 'italic 300 52px Georgia,serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Color Session Karte', 540, 80);
+  ctx.fillStyle = '#b09080';
+  ctx.font = '300 28px Georgia,serif';
+  ctx.fillText(dateStr, 540, 130);
+
+  ctx.strokeStyle = 'rgba(192,116,90,0.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80,180); ctx.lineTo(1000,180); ctx.stroke();
+
+  let y = 220;
+  function wrapText(text, x, maxW, lineH) {
+    const chars = (text||'─').split('');
+    const lines = []; let line = '';
+    for (const ch of chars) {
+      if (ctx.measureText(line+ch).width > maxW) { lines.push(line); line=ch; }
+      else line += ch;
+    }
+    lines.push(line);
+    lines.forEach(l => { ctx.fillText(l, x, y); y += lineH; });
+    y += 16;
+  }
+
+  function drawSection(label, text) {
+    ctx.fillStyle = '#c0745a';
+    ctx.font = '300 22px Georgia,serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(label.toUpperCase(), 80, y);
+    y += 36;
+    ctx.strokeStyle = 'rgba(192,116,90,0.18)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(80,y-6); ctx.lineTo(1000,y-6); ctx.stroke();
+    ctx.fillStyle = '#7a5c4a';
+    ctx.font = '300 30px sans-serif';
+    wrapText(text, 80, 900, 48);
+    y += 8;
+  }
+
+  drawSection('今のあなたの心模様', karteData.now);
+  drawSection('心の奥にあるもの', karteData.stress);
+  drawSection('あなたの願い', karteData.wish);
+
+  ctx.strokeStyle = 'rgba(192,116,90,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80,y); ctx.lineTo(1000,y); ctx.stroke();
+  y += 24;
+
+  drawSection('目標', karteData.goal);
+  drawSection('スケール（現在）', karteData.scale ? karteData.scale+' / 10' : '─');
+  drawSection('今日からの行動課題', karteData.action);
+
+  if (supp) {
+    y += 8;
+    const boxH = karteData.colorMessage ? 230 : 170;
+    ctx.fillStyle = '#fdeee4';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(80,y,920,boxH,16);
+    else { ctx.rect(80,y,920,boxH); }
+    ctx.fill();
+
+    // 色のドット
+    ctx.beginPath();
+    ctx.arc(132, y+80, 44, 0, Math.PI*2);
+    ctx.fillStyle = supp.hex;
+    ctx.fill();
+
+    ctx.fillStyle = '#c0745a';
+    ctx.font = '300 20px Georgia,serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('あなたの一歩を後押しする色のパワー', 196, y+42);
+    ctx.fillStyle = '#3d2b1f';
+    ctx.font = '400 34px sans-serif';
+    ctx.fillText(supp.name + '  ─  ' + (cp.power||''), 196, y+82);
+    ctx.fillStyle = '#7a5c4a';
+    ctx.font = '300 22px sans-serif';
+    ctx.fillText(cp.keyword||'', 196, y+116);
+    ctx.fillStyle = '#c0745a';
+    ctx.font = 'italic 300 24px Georgia,serif';
+    ctx.fillText(cp.affirmation||'', 196, y+150);
+
+    y += boxH + 20;
+
+    // 色からのメッセージ
+    if (karteData.colorMessage) {
+      ctx.fillStyle = 'rgba(192,116,90,0.12)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(80,y,920,120,16);
+      else ctx.rect(80,y,920,120);
+      ctx.fill();
+
+      ctx.fillStyle = '#c0745a';
+      ctx.font = '300 20px Georgia,serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('色からのメッセージ', 110, y+38);
+
+      ctx.fillStyle = '#7a5c4a';
+      ctx.font = 'italic 300 26px Georgia,serif';
+      ctx.textAlign = 'center';
+      // テキスト折り返し
+      const msgChars = karteData.colorMessage.split('');
+      const msgLines = []; let msgLine = '';
+      ctx.font = 'italic 300 26px sans-serif';
+      for (const ch of msgChars) {
+        if (ctx.measureText(msgLine+ch).width > 840) { msgLines.push(msgLine); msgLine=ch; }
+        else msgLine += ch;
+      }
+      msgLines.push(msgLine);
+      msgLines.forEach((l,i) => ctx.fillText(l, 540, y+68+i*36));
+      y += 140;
+    }
+  }
+
+  ctx.fillStyle = 'rgba(192,116,90,0.35)';
+  ctx.font = '300 22px Georgia,serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Ray Colors  ✦  Color Light Therapy', 540, 1640);
+
+  const link = document.createElement('a');
+  link.download = 'session-karte-'+dateStr+'.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ── UI ヘルパー ──
+function addAIMessage(text) {
+  if (!text) return;
+  const wrap = document.getElementById('chatWrap');
+  const msg = document.createElement('div');
+  msg.className = 'msg ai';
+  msg.innerHTML = `<div class="msg-avatar">Ray</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  wrap.appendChild(msg);
+  setTimeout(() => msg.classList.add('visible'), 50);
+  scrollBottom();
+}
+function addUserMessage(text) {
+  const wrap = document.getElementById('chatWrap');
+  const msg = document.createElement('div');
+  msg.className = 'msg user';
+  msg.innerHTML = `<div class="msg-avatar">🌸</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  wrap.appendChild(msg);
+  setTimeout(() => msg.classList.add('visible'), 50);
+  scrollBottom();
+}
+function showTyping() {
+  const wrap = document.getElementById('chatWrap');
+  const el = document.createElement('div');
+  el.className = 'msg ai visible'; el.id = 'typingMsg';
+  el.innerHTML = `<div class="msg-avatar">Ray</div><div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  wrap.appendChild(el); scrollBottom();
+}
+function hideTyping() { const el=document.getElementById('typingMsg'); if(el) el.remove(); }
+function showInput() { document.getElementById('inputArea').classList.add('visible'); setTimeout(()=>document.getElementById('inputField').focus(),300); }
+function hideInput() { document.getElementById('inputArea').classList.remove('visible'); }
+function scrollBottom() { setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),100); }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function autoResize(el) { el.style.height=''; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ── API ──
+async function callAI(prompt, isJson) {
+  try {
+    const resp = await fetch('https://ray-colors.onrender.com/api', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({messages:[{role:'user',content:prompt}]})
+    });
+    const data = await resp.json();
+    const text = data.content.map(b=>b.text||'').join('');
+    if (isJson) {
+      const clean = text.replace(/```json|```/g,'').trim();
+      return JSON.parse(clean);
+    }
+    return text;
+  } catch(e) {
+    console.error(e);
+    return isJson ? {} : '';
+  }
+}
+
+// ── プロンプト: 挨拶 ──
+function buildGreetingPrompt() {
+  return `あなたはRay Colors認定カラープラクティショナーのAI「Ray」です。
+インスーキムバーグのSFBTとカラーセラピーを融合したセッションを行います。
+
+【カラーリーディング結果】
+1番目（願望の方法）: ${colorOrder[0].name}
+2番目（本当の願望）: ${colorOrder[1].name}
+3番目（現状①）: ${colorOrder[2].name}
+4番目（現状②）: ${colorOrder[3].name}
+11番目（心の奥①）: ${colorOrder[10].name}
+12番目（心の奥②）: ${colorOrder[11].name}
+
+温かく迎えて、リーディング結果を心の言葉で要約し、SFBTの最初の質問（今日何を発見して帰りたいか）で始めてください。
+
+JSON形式で返してください:
+{"intro":"挨拶（30字以内）","reading_summary":"カラーリーディング要約（80〜100字・色名不使用）","first_question":"最初の質問（40字以内）"}`;
+}
+
+// ── プロンプト: セッション継続 ──
+function buildSessionPrompt(userInput) {
+  const hist = conversationHistory.slice(-10).map(h=>(h.role==='user'?'クライアント: ':'Ray: ')+h.content).join('\n');
+  const suppName = selectedPowerColor ? selectedPowerColor.name : '';
+  const suppPower = suppName ? (COLOR_POWER[suppName]||{}).power||'' : '';
+
+  return `あなたはRay Colors認定カラープラクティショナーのAI「Ray」です。
+SFBTとカラーセラピーを融合したセッション中です。
+
+【カラーリーディング結果】
+1番目: ${colorOrder[0].name}（${(COLOR_POWER[colorOrder[0].name]||{}).power||''}）
+2番目: ${colorOrder[1].name}（${(COLOR_POWER[colorOrder[1].name]||{}).power||''}）
+12番目: ${colorOrder[11].name}（${(COLOR_POWER[colorOrder[11].name]||{}).power||''}）
+現状: ${colorOrder[2].name}・${colorOrder[3].name}
+心の奥: ${colorOrder[10].name}・${colorOrder[11].name}
+
+【選択済みの力】: ${suppPower || '未選択'}
+【現在のステート】: ${sessionState}
+【会話履歴】:
+${hist}
+【クライアントの発言】: ${userInput}
+
+【セッションフロー】
+- greeting: 挨拶・リーディング要約
+- goal_exploration: 「今日何を発見して帰りたいか」「どうなりたいか」目標を引き出す
+- power_selection: 3色の力を提示して1つ選んでもらう（show_power_selection:true）
+- miracle_question: 選んだ力でミラクルクエスチョン「もし明日の朝、${suppPower||'〇〇'}の力が体中にみなぎっていたら、最初に何が変わりそうですか？」
+- change_deepening: 変化を具体的な行動変容まで落とし込む（「気分が変わる→では最初に何ができそう？」）
+- meaning_question: 意味の質問「それはあなたにどう役立ちますか？どんな意味がありますか？」（リソースの自覚を促す）
+- scaling: スケーリング質問・目標10に対して今何点か（show_scale:true）
+- action_planning: 1点上げるための具体的な一歩を決める
+- completion: セッション完了（session_complete:true）
+
+SFBTの原則：
+・リソースと例外を積極的に引き出す
+・「なぜ」でなく「どのように」で聴く
+・クライアントが自ら答えを見つけるよう導く
+・1返答60〜80字・質問は1つだけ
+・goal_explorationでは2〜3ターン後にpower_selectionへ進む
+
+JSON形式で返してください:
+{"message":"Rayの返答（60〜80字）","next_state":"次のステート名","choices":[],"show_power_selection":false,"show_scale":false,"session_complete":false,"karte_update":{"goal":"","action":""}}`;
+}
+
+// ── プロンプト: カルテ ──
+function buildKartePrompt() {
+  const hist = conversationHistory.slice(-20).map(h=>(h.role==='user'?'クライアント: ':'Ray: ')+h.content).join('\n');
+  return `以下のセッション記録からカルテを作成してください。
+
+【会話記録】
+${hist}
+
+【収集データ】
+スケール: ${karteData.scale}点
+行動課題: ${karteData.action||'未確定'}
+
+【サプリメントカラー情報】
+選ばれた色: ${karteData.supplement ? karteData.supplement.name : ''}
+色の力: ${karteData.supplement ? (COLOR_POWER[karteData.supplement.name]||{}).power||'' : ''}
+キーワード: ${karteData.supplement ? (COLOR_POWER[karteData.supplement.name]||{}).keyword||'' : ''}
+アファメーション: ${karteData.supplement ? (COLOR_POWER[karteData.supplement.name]||{}).affirmation||'' : ''}
+
+JSON形式で返してください:
+{"final_message":"締めくくりメッセージ（80〜100字・温かく励ます）","now_summary":"現状の要約（40字・色名不使用）","stress_summary":"心の奥の要約（40字・色名不使用）","wish_summary":"願いの要約（40字・色名不使用）","goal":"目標（30〜40字）","action":"行動課題（30〜40字の具体的な一歩）","color_message":"選ばれた色のキーワードとセッション内容を踏まえた、その色からのメッセージ（50〜60字・詩的で温かく・「あなたへ」語りかける形で）"}`;
+}
+</script>
+</body>
+</html>
