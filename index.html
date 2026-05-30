@@ -910,7 +910,29 @@ async function showResult() {
 
   grid.appendChild(powerSection);
   powerSection.style.opacity = '1';
-}
+  // ── AIセッションへのボタン ──
+  setTimeout(() => {
+    const sessionDiv = document.createElement('div');
+    sessionDiv.style.cssText = 'width:100%;display:flex;flex-direction:column;align-items:center;gap:0.8rem;margin-top:1.5rem;';
+    const sessionDivider = document.createElement('div');
+    sessionDivider.style.cssText = 'width:40px;height:1px;background:var(--rose-mid);opacity:0.4;';
+    const sessionLabel = document.createElement('p');
+    sessionLabel.style.cssText = 'font-size:0.75rem;color:var(--text-muted);letter-spacing:0.12em;text-align:center;';
+    sessionLabel.textContent = 'さらに深く、AIとのカラーセッションへ';
+    const sessionBtn = document.createElement('button');
+    sessionBtn.style.cssText = 'padding:0.9rem 2.5rem;background:var(--text-mid);border:none;color:#fff;font-family:"Noto Serif JP",serif;font-size:0.85rem;letter-spacing:0.18em;cursor:pointer;border-radius:50px;transition:all 0.3s;box-shadow:0 4px 16px rgba(61,43,31,0.2);width:100%;';
+    sessionBtn.textContent = 'AIカラーセッションを始める ✦';
+    sessionBtn.onmouseover = () => { sessionBtn.style.background='var(--text)'; sessionBtn.style.transform='translateY(-2px)'; };
+    sessionBtn.onmouseout = () => { sessionBtn.style.background='var(--text-mid)'; sessionBtn.style.transform=''; };
+    sessionBtn.onclick = () => {
+      const indices = order.map(c => COLORS.indexOf(c));
+      window.location.href = 'session.html?' + new URLSearchParams({colors: indices.join(',')}).toString();
+    };
+    sessionDiv.appendChild(sessionDivider);
+    sessionDiv.appendChild(sessionLabel);
+    sessionDiv.appendChild(sessionBtn);
+    grid.appendChild(sessionDiv);
+  }, 2000);}
 
 function showAffirmation(color, cp) {
   const grad = COLOR_GRADIENTS[color.name] || { bg:'linear-gradient(135deg, #fdeee4, #fdf4f0)', text:'#ffffff', accent:'rgba(255,255,255,0.75)' };
