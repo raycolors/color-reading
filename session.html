@@ -133,7 +133,7 @@
     <textarea class="input-field" id="inputField"
       placeholder="ここに気持ちを書いてください…" rows="1"
       onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">✦</button>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()" ontouchstart="handleTouch(event)">✦</button>
   </div>
 </div>
 
@@ -239,15 +239,18 @@ async function startSession() {
 // ── メッセージ送信 ──
 async function sendMessage() {
   const field = document.getElementById('inputField');
+  const btn = document.getElementById('sendBtn');
   const text = field.value.trim();
-  if (!text) return;
+  if (!text || btn.disabled) return;
   field.value = '';
   field.style.height = '';
-  document.getElementById('sendBtn').disabled = true;
+  field.blur(); // スマホキーボードを閉じる
+  btn.disabled = true;
   addUserMessage(text);
   conversationHistory.push({role:'user', content:text});
   await handleFlow(text);
-  document.getElementById('sendBtn').disabled = false;
+  btn.disabled = false;
+  field.focus();
 }
 
 // ── フロー管理 ──
@@ -406,11 +409,12 @@ async function buildKarte() {
   if (karte.final_message) {
     addAIMessage(karte.final_message);
   }
-  if (karte.goal)         karteData.goal         = karte.goal;
-  if (karte.action)       karteData.action        = karte.action;
-  if (karte.wish_summary) karteData.wish          = karte.wish_summary;
-  if (karte.now_summary)  karteData.now           = karte.now_summary;
-  if (karte.stress_summary) karteData.stress      = karte.stress_summary;
+  if (karte.goal)           karteData.goal         = karte.goal;
+  if (karte.action)         karteData.action       = karte.action;
+  if (karte.wish_summary)   karteData.wish         = karte.wish_summary;
+  if (karte.now_summary)    karteData.now          = karte.now_summary;
+  if (karte.stress_summary) karteData.stress       = karte.stress_summary;
+  if (karte.color_message)  karteData.colorMessage = karte.color_message;
 
   await delay(800);
   renderKarte();
@@ -457,7 +461,7 @@ function renderKarte() {
       <div class="karte-divider"></div>
       ${supp ? `
       <div class="karte-supplement">
-        <div class="karte-supplement-label">サプリメントカラー</div>
+        <div class="karte-supplement-label">あなたの一歩を後押しする色のパワー</div>
         <div class="supplement-color">
           <div class="supplement-dot" style="background:${supp.hex}"></div>
           <div>
@@ -466,6 +470,11 @@ function renderKarte() {
           </div>
         </div>
         <div class="supplement-aff">${cp.affirmation||''}</div>
+        ${karteData.colorMessage ? `
+        <div style="margin-top:1.2rem; padding-top:1rem; border-top:1px solid rgba(192,116,90,0.15);">
+          <div style="font-size:0.62rem; letter-spacing:0.25em; color:var(--rose); text-transform:uppercase; font-family:'Cormorant Garamond',serif; margin-bottom:0.6rem;">色からのメッセージ</div>
+          <div style="font-size:0.92rem; color:var(--text-mid); line-height:2; font-weight:300; font-style:italic;">${karteData.colorMessage}</div>
+        </div>` : ''}
       </div>` : ''}
       <div class="karte-action">
         <button class="karte-dl-btn" onclick="downloadKarte()">カルテを保存する 📥</button>
@@ -551,33 +560,63 @@ function downloadKarte() {
 
   if (supp) {
     y += 8;
+    const boxH = karteData.colorMessage ? 230 : 170;
     ctx.fillStyle = '#fdeee4';
     ctx.beginPath();
-    if (ctx.roundRect) ctx.roundRect(80,y,920,170,16);
-    else { ctx.rect(80,y,920,170); }
+    if (ctx.roundRect) ctx.roundRect(80,y,920,boxH,16);
+    else { ctx.rect(80,y,920,boxH); }
     ctx.fill();
 
+    // 色のドット
     ctx.beginPath();
-    ctx.arc(132, y+85, 44, 0, Math.PI*2);
+    ctx.arc(132, y+80, 44, 0, Math.PI*2);
     ctx.fillStyle = supp.hex;
     ctx.fill();
 
     ctx.fillStyle = '#c0745a';
     ctx.font = '300 20px Georgia,serif';
     ctx.textAlign = 'left';
-    ctx.fillText('SUPPLEMENT COLOR', 196, y+42);
+    ctx.fillText('あなたの一歩を後押しする色のパワー', 196, y+42);
     ctx.fillStyle = '#3d2b1f';
     ctx.font = '400 34px sans-serif';
-    ctx.fillText(supp.name + '  ─  ' + (cp.power||''), 196, y+88);
+    ctx.fillText(supp.name + '  ─  ' + (cp.power||''), 196, y+82);
     ctx.fillStyle = '#7a5c4a';
-    ctx.font = '300 24px sans-serif';
-    ctx.fillText(cp.keyword||'', 196, y+126);
+    ctx.font = '300 22px sans-serif';
+    ctx.fillText(cp.keyword||'', 196, y+116);
+    ctx.fillStyle = '#c0745a';
+    ctx.font = 'italic 300 24px Georgia,serif';
+    ctx.fillText(cp.affirmation||'', 196, y+150);
 
-    y += 190;
-    ctx.fillStyle = '#7a5c4a';
-    ctx.font = 'italic 300 30px Georgia,serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(cp.affirmation||'', 540, y);
+    y += boxH + 20;
+
+    // 色からのメッセージ
+    if (karteData.colorMessage) {
+      ctx.fillStyle = 'rgba(192,116,90,0.12)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(80,y,920,120,16);
+      else ctx.rect(80,y,920,120);
+      ctx.fill();
+
+      ctx.fillStyle = '#c0745a';
+      ctx.font = '300 20px Georgia,serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('色からのメッセージ', 110, y+38);
+
+      ctx.fillStyle = '#7a5c4a';
+      ctx.font = 'italic 300 26px Georgia,serif';
+      ctx.textAlign = 'center';
+      // テキスト折り返し
+      const msgChars = karteData.colorMessage.split('');
+      const msgLines = []; let msgLine = '';
+      ctx.font = 'italic 300 26px sans-serif';
+      for (const ch of msgChars) {
+        if (ctx.measureText(msgLine+ch).width > 840) { msgLines.push(msgLine); msgLine=ch; }
+        else msgLine += ch;
+      }
+      msgLines.push(msgLine);
+      msgLines.forEach((l,i) => ctx.fillText(l, 540, y+68+i*36));
+      y += 140;
+    }
   }
 
   ctx.fillStyle = 'rgba(192,116,90,0.35)';
@@ -623,6 +662,7 @@ function showInput() { document.getElementById('inputArea').classList.add('visib
 function hideInput() { document.getElementById('inputArea').classList.remove('visible'); }
 function scrollBottom() { setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}),100); }
 function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+function handleTouch(e) { e.preventDefault(); sendMessage(); }
 function autoResize(el) { el.style.height=''; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
 function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
@@ -722,8 +762,14 @@ ${hist}
 スケール: ${karteData.scale}点
 行動課題: ${karteData.action||'未確定'}
 
+【サプリメントカラー情報】
+選ばれた色: ${karteData.supplement ? karteData.supplement.name : ''}
+色の力: ${karteData.supplement ? (COLOR_POWER[karteData.supplement.name]||{}).power||'' : ''}
+キーワード: ${karteData.supplement ? (COLOR_POWER[karteData.supplement.name]||{}).keyword||'' : ''}
+アファメーション: ${karteData.supplement ? (COLOR_POWER[karteData.supplement.name]||{}).affirmation||'' : ''}
+
 JSON形式で返してください:
-{"final_message":"締めくくりメッセージ（80〜100字・温かく励ます）","now_summary":"現状の要約（40字・色名不使用）","stress_summary":"心の奥の要約（40字・色名不使用）","wish_summary":"願いの要約（40字・色名不使用）","goal":"目標（30〜40字）","action":"行動課題（30〜40字の具体的な一歩）"}`;
+{"final_message":"締めくくりメッセージ（80〜100字・温かく励ます）","now_summary":"現状の要約（40字・色名不使用）","stress_summary":"心の奥の要約（40字・色名不使用）","wish_summary":"願いの要約（40字・色名不使用）","goal":"目標（30〜40字）","action":"行動課題（30〜40字の具体的な一歩）","color_message":"選ばれた色のキーワードとセッション内容を踏まえた、その色からのメッセージ（50〜60字・詩的で温かく・「あなたへ」語りかける形で）"}`;
 }
 </script>
 </body>
